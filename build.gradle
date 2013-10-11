@@ -1,0 +1,23 @@
+apply plugin: 'groovy'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.1.0'
+}
+
+task runScript (dependsOn: 'classes', type: JavaExec) {
+    main = 'myscript'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task runConcurrently () {
+    logger.quiet "Running task"
+    ['1000', '2000', '1000', '3000'].each {
+        project.ext.sleepTime = it
+        logger.quiet "runScript with ${project.ext.sleepTime}"
+        runScript
+    }
+}
