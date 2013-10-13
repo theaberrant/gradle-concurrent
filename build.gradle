@@ -1,23 +1,47 @@
+import groovyx.gpars.GParsPool
+
 apply plugin: 'groovy'
+apply plugin: 'idea'
 
-repositories {
-    mavenCentral()
-}
+ext.startTime = System.currentTimeMillis()
 
-dependencies {
-    compile 'org.codehaus.groovy:groovy-all:2.1.0'
-}
-
-task runScript (dependsOn: 'classes', type: JavaExec) {
-    main = 'myscript'
-    classpath = sourceSets.main.runtimeClasspath
-}
-
-task runConcurrently () {
-    logger.quiet "Running task"
-    ['1000', '2000', '1000', '3000'].each {
-        project.ext.sleepTime = it
-        logger.quiet "runScript with ${project.ext.sleepTime}"
-        runScript
+buildscript {
+    repositories {
+        mavenCentral()
     }
+
+    dependencies {
+        classpath "org.codehaus.gpars:gpars:1.1.0"
+    }
+
+}
+
+def concurrentMethod(int index, String threadName) {
+    javaexec {
+        main = 'myscript'
+        classpath = sourceSets.main.runtimeClasspath
+        args [index]
+    }
+}
+
+String getThreadName(names) {
+    String currentName = Thread.currentThread().name
+    if (!names.contains(currentName)) names << currentName
+
+    "t${names.indexOf(currentName).toString().padLeft(2, '0')}"
+}
+
+
+task run << {
+    def cores   = Runtime.runtime.availableProcessors()
+    def threads = 10
+    println "    > Using $threads threads on $cores cores..."
+    def names = []
+    GParsPool.withPool(threads) {
+        [1000, 2000, 1000, 3000].eachParallel {
+            def name = getThreadName(names)
+            concurrentMethod(it, name)
+        }
+    }
+    logger.quiet("Run complete!")
 }
