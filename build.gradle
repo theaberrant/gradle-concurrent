@@ -17,11 +17,14 @@ buildscript {
 }
 
 def concurrentMethod(int index, String threadName) {
-    javaexec {
-        main = 'myscript'
-        classpath = sourceSets.main.runtimeClasspath
-        args [index]
-    }
+    Binding binding = new Binding();
+    binding.variables['args'] = [index, threadName]    
+    binding.variables['threadName'] = threadName
+    
+    def shell = new GroovyShell(binding)
+    
+    def groovySrc = file('src/main/groovy/myscript.groovy')
+    Object result = shell.evaluate(groovySrc)
 }
 
 String getThreadName(names) {

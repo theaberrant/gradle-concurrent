@@ -5,6 +5,6 @@
  */
 Integer sleepTime = (args[0] as Integer ?: 500)
 
-println "Sleeping ${sleepTime}ms"
+println "$threadName sleeping for ${sleepTime}ms"
 sleep(sleepTime)
-println "I have awoken!"
+println "I have awoken with thread $threadName!"
