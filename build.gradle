@@ -18,7 +18,7 @@ buildscript {
 
 def concurrentMethod(int index, String threadName) {
     Binding binding = new Binding();
-    binding.variables['args'] = [index, threadName]    
+    binding.variables['args'] = [index]
     binding.variables['threadName'] = threadName
     
     def shell = new GroovyShell(binding)
