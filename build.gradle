@@ -13,18 +13,28 @@ buildscript {
     dependencies {
         classpath "org.codehaus.gpars:gpars:1.1.0"
     }
+}
 
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.codehaus.groovy:groovy-all:2.1.0"
 }
 
 def concurrentMethod(int index, String threadName) {
-    Binding binding = new Binding();
-    binding.variables['args'] = [index]
-    binding.variables['threadName'] = threadName
-    
-    def shell = new GroovyShell(binding)
-    
-    def groovySrc = file('src/main/groovy/myscript.groovy')
-    Object result = shell.evaluate(groovySrc)
+    logger.quiet "${System.currentTimeMillis()}: Before launch of process $threadName"
+    def classpath = sourceSets.main.runtimeClasspath.getAsPath()
+    logger.quiet "classpath: ${sourceSets.main.runtimeClasspath.getAsPath()}"
+    def main = 'myscript'
+    def args = [index.toString()].join(" ")
+    def process = "java -cp $classpath $main $args".execute()
+    process.waitFor()
+    logger.quiet "${System.currentTimeMillis()}: Process Text: ${process.text}"
+    logger.quiet "${System.currentTimeMillis()}: Process Error: ${process.err}"
+
+    logger.quiet "Process $threadName completed"
 }
 
 String getThreadName(names) {
@@ -34,17 +44,16 @@ String getThreadName(names) {
     "t${names.indexOf(currentName).toString().padLeft(2, '0')}"
 }
 
-
 task run << {
     def cores   = Runtime.runtime.availableProcessors()
     def threads = 10
-    println "    > Using $threads threads on $cores cores..."
+    logger.quiet "${System.currentTimeMillis()}:     > Using $threads threads on $cores cores..."
     def names = []
     GParsPool.withPool(threads) {
-        [1000, 2000, 1000, 3000].eachParallel {
+        [3000, 1000, 2000, 500].eachParallel {
             def name = getThreadName(names)
             concurrentMethod(it, name)
         }
     }
-    logger.quiet("Run complete!")
+    logger.quiet("${System.currentTimeMillis()}: Run complete!")
 }
